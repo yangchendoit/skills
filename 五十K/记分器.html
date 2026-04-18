@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>五十K记分器</title>
+    <style>
+        :root {
+            --color-primary: #DC2626;
+            --color-secondary: #2563EB;
+            --color-accent: #22C55E;
+            --color-background: #0F172A;
+            --color-foreground: #FFFFFF;
+            --color-muted: #1F1829;
+            --color-border: rgba(255,255,255,0.08);
+            --color-warning: #F59E0B;
+            --space-xs: 8px;
+            --space-sm: 12px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: var(--color-background);
+            color: var(--color-foreground);
+            min-height: 100vh;
+            padding: var(--space-md);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: var(--space-xl) 0;
+            margin-bottom: var(--space-lg);
+        }
+
+        .header h1 {
+            font-size: clamp(20px, 5vw, 28px);
+            font-weight: 900;
+            color: var(--color-primary);
+            text-shadow: 0 0 10px var(--color-primary);
+            margin-bottom: var(--space-md);
+            letter-spacing: 2px;
+        }
+
+        .nav {
+            display: flex;
+            gap: var(--space-sm);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            font-size: clamp(14px, 3.5vw, 16px);
+            font-weight: 700;
+            padding: var(--space-md) var(--space-lg);
+            background: var(--color-muted);
+            border: 2px solid var(--color-border);
+            color: var(--color-foreground);
+            cursor: pointer;
+            border-radius: 8px;
+            min-height: 48px;
+            min-width: 100px;
+            touch-action: manipulation;
+        }
+
+        .nav-btn.active {
+            background: var(--color-secondary);
+            border-color: var(--color-secondary);
+        }
+
+        .score-card {
+            background: var(--color-muted);
+            border: 2px solid var(--color-border);
+            border-radius: 12px;
+            padding: var(--space-xl) var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-xl);
+        }
+
+        .team {
+            text-align: center;
+            padding: var(--space-md) 0;
+        }
+
+        .team-name {
+            font-size: clamp(16px, 4vw, 20px);
+            font-weight: 700;
+            margin-bottom: var(--space-md);
+            cursor: pointer;
+            touch-action: manipulation;
+            padding: var(--space-sm);
+            border-radius: 4px;
+        }
+
+        .team-name:active {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .team.our .team-name {
+            color: var(--color-accent);
+        }
+
+        .team.their .team-name {
+            color: var(--color-primary);
+        }
+
+        .score {
+            font-size: clamp(40px, 12vw, 60px);
+            font-weight: 900;
+            margin: var(--space-md) 0;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .team.our .score {
+            color: var(--color-accent);
+        }
+
+        .team.their .score {
+            color: var(--color-primary);
+        }
+
+        .level {
+            font-size: clamp(20px, 5vw, 24px);
+            font-weight: 700;
+            color: var(--color-secondary);
+        }
+
+        .vs {
+            display: none;
+        }
+
+        .section {
+            margin-bottom: var(--space-lg);
+        }
+
+        .section-title {
+            font-size: clamp(16px, 4vw, 18px);
+            font-weight: 900;
+            margin-bottom: var(--space-md);
+            padding-bottom: var(--space-sm);
+            border-bottom: 2px solid var(--color-border);
+            color: var(--color-accent);
+        }
+
+        .section-subtitle {
+            font-size: clamp(14px, 3.5vw, 16px);
+            font-weight: 700;
+            color: var(--color-primary);
+            margin: var(--space-lg) 0 var(--space-md) 0;
+            padding-bottom: var(--space-xs);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .tip {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 4px solid var(--color-accent);
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            font-size: clamp(14px, 3.5vw, 16px);
+            color: #94A3B8;
+            border-radius: 4px;
+        }
+
+        .input-group {
+            margin-bottom: var(--space-md);
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: var(--space-sm);
+            font-size: clamp(14px, 3.5vw, 16px);
+            font-weight: 700;
+            color: var(--color-accent);
+        }
+
+        input[type="number"] {
+            font-size: clamp(20px, 5vw, 24px);
+            padding: var(--space-md);
+            background: var(--color-background);
+            border: 2px solid var(--color-border);
+            color: var(--color-foreground);
+            width: 100%;
+            min-height: 48px;
+            border-radius: 8px;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--color-accent);
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
+        .btn {
+            font-size: clamp(14px, 3.5vw, 16px);
+            font-weight: 700;
+            padding: var(--space-lg) var(--space-md);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            min-height: 48px;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-primary {
+            background: var(--color-secondary);
+            color: #FFF;
+        }
+
+        .btn-secondary {
+            background: var(--color-muted);
+            color: var(--color-foreground);
+            border: 2px solid var(--color-border);
+        }
+
+        .btn-bomb {
+            background: var(--color-warning);
+            color: #000;
+        }
+
+        .bomb-section {
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid var(--color-warning);
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            border-radius: 8px;
+        }
+
+        .bomb-list {
+            margin-top: var(--space-md);
+        }
+
+        .bomb-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-md);
+            margin-bottom: var(--space-xs);
+            background: var(--color-background);
+            border-radius: 6px;
+            font-size: clamp(16px, 4vw, 18px);
+            min-height: 48px;
+        }
+
+        .bomb-item button {
+            background: var(--color-primary);
+            border: none;
+            color: #FFF;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            min-width: 48px;
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+
+        .bomb-item button:active {
+            transform: scale(0.95);
+        }
+
+        .bomb-total {
+            font-size: clamp(16px, 4vw, 20px);
+            font-weight: 900;
+            margin-top: var(--space-md);
+            padding-top: var(--space-md);
+            border-top: 2px solid var(--color-warning);
+            color: var(--color-warning);
+        }
+
+        .tour-grid {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .tour-option {
+            position: relative;
+        }
+
+        .tour-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .tour-option label {
+            display: block;
+            padding: var(--space-lg) var(--space-md);
+            background: var(--color-muted);
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: clamp(16px, 4vw, 18px);
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+
+        .tour-option input[type="radio"]:checked + label {
+            background: var(--color-secondary);
+            border-color: var(--color-secondary);
+            color: #FFF;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            border-radius: 12px;
+            padding: var(--space-xl) var(--space-md);
+            text-align: center;
+            margin-bottom: var(--space-lg);
+            display: none;
+        }
+
+        .result-emoji {
+            font-size: clamp(48px, 15vw, 64px);
+            margin-bottom: var(--space-md);
+        }
+
+        .result-title {
+            font-size: clamp(20px, 5vw, 28px);
+            font-weight: 900;
+            margin-bottom: var(--space-md);
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+        }
+
+        .result-detail {
+            font-size: clamp(16px, 4vw, 20px);
+            line-height: 1.8;
+        }
+
+        .history-item {
+            background: var(--color-muted);
+            border-radius: 8px;
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .history-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--color-accent);
+        }
+
+        .history-item:nth-child(odd)::before {
+            background: var(--color-primary);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-sm);
+            font-size: clamp(14px, 3.5vw, 16px);
+            color: #94A3B8;
+        }
+
+        .delete-btn {
+            background: var(--color-primary);
+            border: none;
+            color: #FFF;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.95);
+        }
+
+        .history-result {
+            font-size: clamp(14px, 3.5vw, 18px);
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-lg);
+            margin-bottom: var(--space-lg);
+        }
+
+        .stat-item {
+            background: var(--color-muted);
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            padding: var(--space-lg);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: clamp(28px, 8vw, 40px);
+            font-weight: 900;
+            color: var(--color-accent);
+            margin-bottom: var(--space-sm);
+            text-shadow: 0 0 10px var(--color-accent);
+        }
+
+        .stat-label {
+            font-size: clamp(16px, 4vw, 18px);
+            color: #94A3B8;
+        }
+
+        .achievement {
+            background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
+            border-radius: 8px;
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .achievement-icon {
+            font-size: clamp(32px, 10vw, 48px);
+        }
+
+        .achievement-title {
+            font-size: clamp(14px, 3.5vw, 18px);
+            font-weight: 900;
+            margin-bottom: 6px;
+        }
+
+        .achievement-date {
+            font-size: clamp(12px, 3vw, 16px);
+            opacity: 0.9;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: var(--space-md);
+        }
+
+        .popup.show {
+            display: flex;
+        }
+
+        .popup-content {
+            background: var(--color-muted);
+            border: 4px solid var(--color-accent);
+            border-radius: 12px;
+            padding: var(--space-xl) var(--space-lg);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .popup-emoji {
+            font-size: clamp(64px, 25vw, 80px);
+            margin-bottom: var(--space-lg);
+        }
+
+        .popup-title {
+            font-size: clamp(18px, 5vw, 24px);
+            font-weight: 900;
+            margin-bottom: var(--space-md);
+            color: var(--color-accent);
+            text-shadow: 0 0 10px var(--color-accent);
+        }
+
+        .popup-message {
+            font-size: clamp(18px, 4.5vw, 22px);
+            margin-bottom: var(--space-xl);
+            color: var(--color-foreground);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--space-xl) var(--space-md);
+            color: #64748B;
+        }
+
+        .empty-state-icon {
+            font-size: clamp(48px, 15vw, 64px);
+            margin-bottom: var(--space-md);
+            opacity: 0.3;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                max-width: 900px;
+            }
+
+            .team-grid {
+                grid-template-columns: 1fr auto 1fr;
+                align-items: center;
+            }
+
+            .vs {
+                display: block;
+                font-size: clamp(20px, 5vw, 32px);
+                font-weight: 900;
+                color: var(--color-primary);
+                text-shadow: 0 0 10px var(--color-primary);
+            }
+
+            .btn-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            body {
+                padding: var(--space-xl);
+            }
+
+            .score-card {
+                padding: var(--space-xl);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚔️ 五十K记分器 ⚔️</h1>
+            <div class="nav">
+                <button class="nav-btn active" onclick="showPage('scoring')">记分</button>
+                <button class="nav-btn" onclick="showPage('history')">历史</button>
+                <button class="nav-btn" onclick="showPage('stats')">统计</button>
+            </div>
+        </div>
+
+        <div id="scoring-page" class="page active">
+            <div class="score-card">
+                <div class="team-grid">
+                    <div class="team our">
+                        <div class="team-name" onclick="editTeamName('our')">我们队</div>
+                        <div class="score" id="our-score">0分</div>
+                        <div class="level" id="our-level">0级</div>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="team their">
+                        <div class="team-name" onclick="editTeamName('their')">他们队</div>
+                        <div class="score" id="their-score">0分</div>
+                        <div class="level" id="their-level">0级</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🎯 基础分</div>
+                <div class="tip">💡 总分200分，输入我方分数自动计算对方</div>
+                <div class="input-group">
+                    <label for="our-base">我方基础分</label>
+                    <input type="number" id="our-base" value="0" onchange="updateBaseScore()" min="0" max="200">
+                </div>
+                <div class="input-group">
+                    <label for="their-base">对方基础分</label>
+                    <input type="number" id="their-base" value="200" readonly>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">💣 炸弹</div>
+                <div class="section-subtitle">我方炸弹</div>
+                <div class="bomb-section">
+                    <div class="btn-grid">
+                        <button class="btn btn-bomb" onclick="addBomb('our', 200)">5张 200分</button>
+                        <button class="btn btn-bomb" onclick="addBomb('our', 500)">6张 500分</button>
+                        <button class="btn btn-bomb" onclick="addBomb('our', 1000)">7张 1000分</button>
+                        <button class="btn btn-bomb" onclick="addBomb('our', 2000)">8张 2000分</button>
+                        <button class="btn btn-bomb" onclick="addBomb('our', 5000)">9张 5000分</button>
+                        <button class="btn btn-bomb" onclick="addBomb('our', 10000)">10张 10000分</button>
+                    </div>
+                    <div class="bomb-list" id="our-bomb-list"></div>
+                    <div class="bomb-total">炸弹总分: <span id="our-bomb-total">0</span> 分</div>
+                </div>
+
+                <div class="section-subtitle">对方炸弹</div>
+                <div class="bomb-section">
+                    <div class="btn-grid">
+                        <button class="btn btn-bomb" onclick="addBomb('their', 200)">5张 200分</button>
+                        <button class="btn btn-bomb" onclick="addBomb('their', 500)">6张 500分</button>
+                        <button class="btn btn-bomb" onclick="addBomb('their', 1000)">7张 1000分</button>
+                        <button class="btn btn-bomb" onclick="addBomb('their', 2000)">8张 2000分</button>
+                        <button class="btn btn-bomb" onclick="addBomb('their', 5000)">9张 5000分</button>
+                        <button class="btn btn-bomb" onclick="addBomb('their', 10000)">10张 10000分</button>
+                    </div>
+                    <div class="bomb-list" id="their-bomb-list"></div>
+                    <div class="bomb-total">炸弹总分: <span id="their-bomb-total">0</span> 分</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🎮 游次</div>
+                <div class="tour-grid">
+                    <div class="tour-option">
+                        <input type="radio" id="tour-none" name="tour" value="none" checked onchange="updateTourBonus()">
+                        <label for="tour-none">无游次</label>
+                    </div>
+                    <div class="tour-option">
+                        <input type="radio" id="tour-our12" name="tour" value="our12" onchange="updateTourBonus()">
+                        <label for="tour-our12">我方1、2游 +200分</label>
+                    </div>
+                    <div class="tour-option">
+                        <input type="radio" id="tour-our13" name="tour" value="our13" onchange="updateTourBonus()">
+                        <label for="tour-our13">我方1、3游 +100分</label>
+                    </div>
+                    <div class="tour-option">
+                        <input type="radio" id="tour-their12" name="tour" value="their12" onchange="updateTourBonus()">
+                        <label for="tour-their12">对方1、2游 +200分</label>
+                    </div>
+                    <div class="tour-option">
+                        <input type="radio" id="tour-their13" name="tour" value="their13" onchange="updateTourBonus()">
+                        <label for="tour-their13">对方1、3游 +100分</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-grid" style="margin-top: var(--space-lg);">
+                <button class="btn btn-primary" onclick="calculateResult()">计算结果</button>
+                <button class="btn btn-secondary" onclick="resetGame()">清空重置</button>
+                <button class="btn btn-primary" onclick="saveGame()">保存记录</button>
+            </div>
+
+            <div id="result-card" class="result-card">
+                <div id="result-emoji" class="result-emoji">🎉</div>
+                <div id="result-title" class="result-title">游戏结果</div>
+                <div id="result-detail" class="result-detail"></div>
+            </div>
+        </div>
+
+        <div id="history-page" class="page">
+            <div class="section">
+                <div class="section-title">📜 游戏历史</div>
+                <div id="history-list"></div>
+            </div>
+        </div>
+
+        <div id="stats-page" class="page">
+            <div class="section">
+                <div class="section-title">📊 游戏统计</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-games">0</div>
+                        <div class="stat-label">总局数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="win-rate">0%</div>
+                        <div class="stat-label">胜率</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="avg-level">0</div>
+                        <div class="stat-label">平均级数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="max-level">0</div>
+                        <div class="stat-label">最高级数</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🏆 成就展示</div>
+                <div id="achievements-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="achievement-popup" class="popup">
+        <div class="popup-content">
+            <div class="popup-emoji" id="popup-emoji">🏆</div>
+            <div class="popup-title" id="popup-title">成就解锁</div>
+            <div class="popup-message" id="popup-message">恭喜获得成就！</div>
+            <button class="btn btn-primary" onclick="closePopup()">太棒了！</button>
+        </div>
+    </div>
+
+    <script>
+        var gameData = {
+            ourTeam: { name: '我们队', baseScore: 0, bombScore: 0, bombs: [], tourBonus: 0, totalScore: 0, level: 0 },
+            theirTeam: { name: '他们队', baseScore: 0, bombScore: 0, bombs: [], tourBonus: 0, totalScore: 0, level: 0 }
+        };
+        
+        var stats = JSON.parse(localStorage.getItem('scoring_stats')) || {
+            totalGames: 0, winGames: 0, totalLevel: 0, maxLevel: 0, currentStreak: 0
+        };
+
+        var bombLabels = {
+            200: '5张炸弹', 500: '6张炸弹', 1000: '7张炸弹', 2000: '8张炸弹',
+            5000: '9张炸弹', 10000: '10张炸弹', 20000: '11张炸弹', 50000: '12张炸弹'
+        };
+
+        function addBomb(team, score) {
+            gameData[team === 'our' ? 'ourTeam' : 'theirTeam'].bombs.push(score);
+            updateBombList(team);
+            updateScores();
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+
+        function removeBomb(team, index) {
+            gameData[team === 'our' ? 'ourTeam' : 'theirTeam'].bombs.splice(index, 1);
+            updateBombList(team);
+            updateScores();
+        }
+
+        function updateBombList(team) {
+            var bombList = document.getElementById(team + '-bomb-list');
+            var bombs = gameData[team === 'our' ? 'ourTeam' : 'theirTeam'].bombs;
+            
+            bombList.innerHTML = bombs.map(function(bomb, index) {
+                return '<div class="bomb-item"><span>' + (bombLabels[bomb] || bomb + '分') + ' - ' + bomb + '分</span><button onclick="removeBomb(\'' + team + '\', ' + index + ')">✕</button></div>';
+            }).join('');
+
+            var total = bombs.reduce(function(sum, bomb) { return sum + bomb; }, 0);
+            document.getElementById(team + '-bomb-total').textContent = total;
+        }
+
+        function updateBaseScore() {
+            var ourBase = parseInt(document.getElementById('our-base').value) || 0;
+            document.getElementById('their-base').value = Math.max(0, 200 - ourBase);
+            updateScores();
+        }
+        
+        function updateTourBonus() {
+            var tourValue = document.querySelector('input[name="tour"]:checked').value;
+            gameData.ourTeam.tourBonus = 0;
+            gameData.theirTeam.tourBonus = 0;
+            
+            switch(tourValue) {
+                case 'our12': gameData.ourTeam.tourBonus = 200; gameData.theirTeam.tourBonus = -200; break;
+                case 'our13': gameData.ourTeam.tourBonus = 100; gameData.theirTeam.tourBonus = -100; break;
+                case 'their12': gameData.ourTeam.tourBonus = -200; gameData.theirTeam.tourBonus = 200; break;
+                case 'their13': gameData.ourTeam.tourBonus = -100; gameData.theirTeam.tourBonus = 100; break;
+            }
+            updateScores();
+        }
+        
+        function updateScores() {
+            gameData.ourTeam.baseScore = parseInt(document.getElementById('our-base').value) || 0;
+            gameData.ourTeam.bombScore = gameData.ourTeam.bombs.reduce(function(sum, bomb) { return sum + bomb; }, 0);
+            gameData.theirTeam.baseScore = parseInt(document.getElementById('their-base').value) || 0;
+            gameData.theirTeam.bombScore = gameData.theirTeam.bombs.reduce(function(sum, bomb) { return sum + bomb; }, 0);
+            
+            gameData.ourTeam.totalScore = gameData.ourTeam.baseScore + gameData.ourTeam.bombScore + gameData.ourTeam.tourBonus;
+            gameData.theirTeam.totalScore = gameData.theirTeam.baseScore + gameData.theirTeam.bombScore + gameData.theirTeam.tourBonus;
+            
+            gameData.ourTeam.level = Math.round(gameData.ourTeam.totalScore / 100);
+            gameData.theirTeam.level = Math.round(gameData.theirTeam.totalScore / 100);
+            
+            document.getElementById('our-score').textContent = gameData.ourTeam.totalScore + '分';
+            document.getElementById('our-level').textContent = gameData.ourTeam.level + '级';
+            document.getElementById('their-score').textContent = gameData.theirTeam.totalScore + '分';
+            document.getElementById('their-level').textContent = gameData.theirTeam.level + '级';
+        }
+        
+        function calculateResult() {
+            updateScores();
+            var levelDiff = gameData.ourTeam.level - gameData.theirTeam.level;
+            var resultCard = document.getElementById('result-card');
+            var resultEmoji = document.getElementById('result-emoji');
+            var resultTitle = document.getElementById('result-title');
+            var resultDetail = document.getElementById('result-detail');
+            
+            resultCard.style.display = 'block';
+            
+            if (levelDiff > 0) {
+                resultEmoji.textContent = '🎉';
+                resultTitle.textContent = '我们队胜！';
+                resultDetail.innerHTML = '级数差：' + levelDiff + '级<br>我方：' + gameData.ourTeam.level + '级<br>对方：' + gameData.theirTeam.level + '级';
+            } else if (levelDiff < 0) {
+                resultEmoji.textContent = '😔';
+                resultTitle.textContent = '他们队胜...';
+                resultDetail.innerHTML = '级数差：' + Math.abs(levelDiff) + '级<br>我方：' + gameData.ourTeam.level + '级<br>对方：' + gameData.theirTeam.level + '级';
+            } else {
+                resultEmoji.textContent = '🤝';
+                resultTitle.textContent = '平局！';
+                resultDetail.innerHTML = '双方级数相同<br>比较原始分数判定';
+            }
+            resultCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        function saveGame() {
+            calculateResult();
+            var history = JSON.parse(localStorage.getItem('scoring_history')) || [];
+            var levelDiff = gameData.ourTeam.level - gameData.theirTeam.level;
+            
+            history.unshift({
+                id: Date.now(),
+                timestamp: new Date().toLocaleString('zh-CN'),
+                ourTeam: Object.assign({}, gameData.ourTeam),
+                theirTeam: Object.assign({}, gameData.theirTeam),
+                levelDiff: levelDiff,
+                winner: levelDiff > 0 ? '我们队' : (levelDiff < 0 ? '他们队' : '平局')
+            });
+            
+            if (history.length > 100) history.splice(100);
+            localStorage.setItem('scoring_history', JSON.stringify(history));
+            
+            updateStats(levelDiff);
+            checkAchievements(levelDiff);
+            alert('✓ 记录已保存！');
+        }
+        
+        function updateStats(levelDiff) {
+            stats.totalGames++;
+            if (levelDiff > 0) { stats.winGames++; stats.currentStreak++; }
+            else { stats.currentStreak = 0; }
+            if (levelDiff > 0) {
+                stats.totalLevel += levelDiff;
+                if (levelDiff > stats.maxLevel) stats.maxLevel = levelDiff;
+            }
+            localStorage.setItem('scoring_stats', JSON.stringify(stats));
+        }
+        
+        function checkAchievements(levelDiff) {
+            var achievements = JSON.parse(localStorage.getItem('scoring_achievements')) || [];
+            if (stats.totalGames === 1) { showAchievement('🎯', '新手起航', '完成第一局！'); achievements.push({title: '新手起航', date: new Date().toLocaleDateString('zh-CN')}); }
+            if (stats.totalGames === 10) { showAchievement('🎮', '老玩家', '完成10局！'); achievements.push({title: '老玩家', date: new Date().toLocaleDateString('zh-CN')}); }
+            if (stats.currentStreak >= 3 && !achievements.find(function(a) { return a.title === '连胜新手'; })) { showAchievement('🔥', '连胜新手', '连胜3局！'); achievements.push({title: '连胜新手', date: new Date().toLocaleDateString('zh-CN')}); }
+            if (stats.currentStreak >= 5 && !achievements.find(function(a) { return a.title === '连胜王者'; })) { showAchievement('👑', '连胜王者', '连胜5局！'); achievements.push({title: '连胜王者', date: new Date().toLocaleDateString('zh-CN')}); }
+            if (levelDiff >= 10) { showAchievement('💎', '完美胜利', '获得10级+大胜！'); achievements.push({title: '完美胜利', date: new Date().toLocaleDateString('zh-CN')}); }
+            localStorage.setItem('scoring_achievements', JSON.stringify(achievements));
+        }
+        
+        function showAchievement(emoji, title, message) {
+            document.getElementById('popup-emoji').textContent = emoji;
+            document.getElementById('popup-title').textContent = title;
+            document.getElementById('popup-message').textContent = message;
+            document.getElementById('achievement-popup').classList.add('show');
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
+        }
+        
+        function closePopup() {
+            document.getElementById('achievement-popup').classList.remove('show');
+        }
+        
+        function resetGame() {
+            if (!confirm('确定要清空当前输入吗？')) return;
+            document.getElementById('our-base').value = 0;
+            document.getElementById('their-base').value = 200;
+            gameData.ourTeam.bombs = [];
+            gameData.theirTeam.bombs = [];
+            updateBombList('our');
+            updateBombList('their');
+            document.querySelector('input[name="tour"][value="none"]').checked = true;
+            gameData.ourTeam = { name: gameData.ourTeam.name, baseScore: 0, bombScore: 0, bombs: [], tourBonus: 0, totalScore: 0, level: 0 };
+            gameData.theirTeam = { name: gameData.theirTeam.name, baseScore: 200, bombScore: 0, bombs: [], tourBonus: 0, totalScore: 200, level: 2 };
+            document.getElementById('our-score').textContent = '0分';
+            document.getElementById('our-level').textContent = '0级';
+            document.getElementById('their-score').textContent = '200分';
+            document.getElementById('their-level').textContent = '2级';
+            document.getElementById('result-card').style.display = 'none';
+        }
+        
+        function editTeamName(team) {
+            var newName = prompt('请输入队伍名称:', gameData[team === 'our' ? 'ourTeam' : 'theirTeam'].name);
+            if (newName && newName.trim()) {
+                gameData[team === 'our' ? 'ourTeam' : 'theirTeam'].name = newName.trim();
+                document.querySelector('.team.' + team + ' .team-name').textContent = newName.trim();
+            }
+        }
+        
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(function(page) { page.classList.remove('active'); });
+            var buttons = document.querySelectorAll('.nav-btn');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
+            document.getElementById(pageName + '-page').classList.add('active');
+            event.target.classList.add('active');
+            if (pageName === 'history') loadHistory();
+            else if (pageName === 'stats') loadStats();
+        }
+        
+        function loadHistory() {
+            var history = JSON.parse(localStorage.getItem('scoring_history')) || [];
+            var historyList = document.getElementById('history-list');
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div style="font-size: 20px; margin-top: var(--space-md);">暂无历史记录</div></div>';
+                return;
+            }
+            historyList.innerHTML = history.map(function(game) {
+                return '<div class="history-item"><div class="history-header"><span>' + game.timestamp + '</span><button class="delete-btn" onclick="deleteGame(' + game.id + ')">删除</button></div><div class="history-result">' + (game.winner === '我们队' ? '🎉' : (game.winner === '他们队' ? '😔' : '🤝')) + ' ' + game.winner + ' ' + Math.abs(game.levelDiff) + '级</div><div style="margin-top: var(--space-sm); font-size: clamp(14px, 3.5vw, 18px);">我方: ' + game.ourTeam.totalScore + '分 (' + game.ourTeam.level + '级) | 对方: ' + game.theirTeam.totalScore + '分 (' + game.theirTeam.level + '级)</div></div>';
+            }).join('');
+        }
+        
+        function deleteGame(gameId) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+            var history = JSON.parse(localStorage.getItem('scoring_history')) || [];
+            localStorage.setItem('scoring_history', JSON.stringify(history.filter(function(game) { return game.id !== gameId; })));
+            loadHistory();
+        }
+        
+        function loadStats() {
+            document.getElementById('total-games').textContent = stats.totalGames;
+            document.getElementById('win-rate').textContent = stats.totalGames > 0 ? Math.round(stats.winGames / stats.totalGames * 100) + '%' : '0%';
+            document.getElementById('avg-level').textContent = stats.winGames > 0 ? Math.round(stats.totalLevel / stats.winGames) : 0;
+            document.getElementById('max-level').textContent = stats.maxLevel;
+            var achievements = JSON.parse(localStorage.getItem('scoring_achievements')) || [];
+            var achievementsList = document.getElementById('achievements-list');
+            if (achievements.length === 0) {
+                achievementsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><div style="font-size: 20px; margin-top: var(--space-md);">暂无成就，继续努力！</div></div>';
+                return;
+            }
+            var achievementIcons = { '新手起航': '🎯', '老玩家': '🎮', '连胜新手': '🔥', '连胜王者': '👑', '完美胜利': '💎' };
+            achievementsList.innerHTML = achievements.map(function(a) {
+                return '<div class="achievement"><div class="achievement-icon">' + (achievementIcons[a.title] || '🏆') + '</div><div><div class="achievement-title">' + a.title + '</div><div class="achievement-date">解锁于 ' + a.date + '</div></div></div>';
+            }).join('');
+        }
+        
+        // 初始化
+        updateBombList('our');
+        updateBombList('their');
+        updateBaseScore();
+        
+        // 键盘事件
+        document.addEventListener('keydown', function(e) { 
+            if (e.key === 'Escape') closePopup(); 
+        });
+        
+        // 点击弹窗外部关闭
+        document.getElementById('achievement-popup').addEventListener('click', function(e) { 
+            if (e.target.classList.contains('popup')) closePopup(); 
+        });
+    </script>
+</body>
+</html>
