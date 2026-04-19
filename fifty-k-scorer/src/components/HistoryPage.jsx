@@ -65,12 +65,26 @@ export default function HistoryPage({ history, searchTerm, onSearch, onDelete, o
                   <div className="history-detail-row"><span className="history-detail-label">级数对比</span><span className="history-detail-value">{game.ourTeam.level}级 vs {game.theirTeam.level}级</span></div>
                   {game.ourTeam.hands?.length > 0 && game.ourTeam.hands.map((h, i) => {
                     const th = game.theirTeam.hands[i]
-                    const ourBombs = (h.bombs || []).map(b => <span key={b} className="history-bomb-tag">{BOMB_LABELS[b]}</span>)
-                    const theirBombs = (th?.bombs || []).map(b => <span key={b} className="history-bomb-tag">{BOMB_LABELS[b]}</span>)
+                    const ourBombs = (h.bombs || []).map((b, idx) => {
+                      const score = b.score || b
+                      const player = b.player
+                      return <span key={idx} className="history-bomb-tag">{player && <span className="bomb-player-small">{player}</span>}{BOMB_LABELS[score]}</span>
+                    })
+                    const theirBombs = (th?.bombs || []).map((b, idx) => {
+                      const score = b.score || b
+                      const player = b.player
+                      return <span key={idx} className="history-bomb-tag">{player && <span className="bomb-player-small">{player}</span>}{BOMB_LABELS[score]}</span>
+                    })
                     return (
                       <div key={i} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: 6, marginBottom: 4 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}><span style={{ color: '#64748B' }}>第{i + 1}把</span><span><span style={{ color: 'var(--color-accent)' }}>+{h.totalScore}</span> vs <span style={{ color: 'var(--color-primary)' }}>+{th?.totalScore || 0}</span></span></div>
                         <div style={{ fontSize: 11, color: '#94A3B8' }}>基础:{h.baseScore} vs {th?.baseScore || 0} | 炸弹:{h.bombScore} vs {th?.bombScore || 0}</div>
+                        {(ourBombs.length > 0 || theirBombs.length > 0) && (
+                          <div style={{ fontSize: 10, marginTop: 4 }}>
+                            {ourBombs.length > 0 && <div style={{ color: 'var(--color-accent)' }}>{ourBombs}</div>}
+                            {theirBombs.length > 0 && <div style={{ color: 'var(--color-primary)' }}>{theirBombs}</div>}
+                          </div>
+                        )}
                       </div>
                     )
                   })}

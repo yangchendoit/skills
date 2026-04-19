@@ -1,11 +1,24 @@
 export default function StatsPage({ stats, onClearAll }) {
   const players = Object.entries(stats.players || {}).sort((a, b) => b[1].wins - a[1].wins)
+  const bombRanking = Object.entries(stats.players || {})
+    .filter(([, data]) => data.bombs > 0)
+    .sort((a, b) => b[1].bombScore - a[1].bombScore)
 
   const handleClearAll = () => {
     if (stats.totalGames === 0) return
     if (confirm('确定清空所有统计数据？')) {
       onClearAll()
     }
+  }
+
+  // 幽默称号生成
+  const getBombTitle = (index, bombScore) => {
+    if (bombScore >= 10000) return '💣 炸弹之神'
+    if (bombScore >= 5000) return '🔥 炸弹大师'
+    if (bombScore >= 2000) return '💥 爆破专家'
+    if (bombScore >= 1000) return '🎯 炸弹好手'
+    if (bombScore >= 500) return '🧨 小试牛刀'
+    return '🎆 初出茅庐'
   }
 
   return (
@@ -42,6 +55,29 @@ export default function StatsPage({ stats, onClearAll }) {
           ))
         )}
       </div>
+
+      {bombRanking.length > 0 && (
+        <div className="section">
+          <div className="section-title"><span>💣 炸弹榜</span></div>
+          {bombRanking.map(([name, data], index) => (
+            <div key={name} className="bomb-rank-item">
+              <div className="bomb-rank-header">
+                <span className="bomb-rank-name">
+                  {index === 0 && '🥇 '}
+                  {index === 1 && '🥈 '}
+                  {index === 2 && '🥉 '}
+                  {name}
+                </span>
+                <span className="bomb-rank-title">{getBombTitle(index, data.bombScore)}</span>
+              </div>
+              <div className="bomb-rank-stats">
+                <span>投弹 {data.bombs} 颗</span>
+                <span>总分 {data.bombScore}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

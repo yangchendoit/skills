@@ -58,7 +58,7 @@ export const calculateLevel = (totalScore) => {
 };
 
 export const calculateHandScore = (baseScore, bombs, tourBonus) => {
-  const bombScore = bombs.reduce((sum, b) => sum + b, 0);
+  const bombScore = bombs.reduce((sum, b) => sum + (b.score || b), 0);
   return baseScore + bombScore + tourBonus;
 };
 

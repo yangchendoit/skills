@@ -147,14 +147,14 @@ export default function App() {
 
     const ourHand = {
       baseScore: gameData.ourTeam.baseScore,
-      bombScore: gameData.ourTeam.bombs.reduce((s, b) => s + b, 0),
+      bombScore: gameData.ourTeam.bombs.reduce((s, b) => s + (b.score || b), 0),
       bombs: [...gameData.ourTeam.bombs],
       tourBonus: gameData.ourTeam.tourBonus,
       totalScore: scores.ourHandScore
     }
     const theirHand = {
       baseScore: gameData.theirTeam.baseScore,
-      bombScore: gameData.theirTeam.bombs.reduce((s, b) => s + b, 0),
+      bombScore: gameData.theirTeam.bombs.reduce((s, b) => s + (b.score || b), 0),
       bombs: [...gameData.theirTeam.bombs],
       tourBonus: gameData.theirTeam.tourBonus,
       totalScore: scores.theirHandScore
@@ -233,13 +233,39 @@ export default function App() {
     newStats.totalGames++
     newStats.rounds = Math.max(newStats.rounds, gameData.roundNum)
     ;[...gameData.ourTeam.players, ...gameData.theirTeam.players].forEach(name => {
-      if (!newStats.players[name]) newStats.players[name] = { games: 0, wins: 0 }
+      if (!newStats.players[name]) newStats.players[name] = { games: 0, wins: 0, bombs: 0, bombScore: 0 }
       newStats.players[name].games++
       if ((winner === 'our' && gameData.ourTeam.players.includes(name)) ||
           (winner === 'their' && gameData.theirTeam.players.includes(name))) {
         newStats.players[name].wins++
       }
     })
+
+    // 统计炸弹
+    const countBombs = (bombs, teamPlayers) => {
+      bombs.forEach(bomb => {
+        const bombScore = bomb.score || bomb
+        const bombPlayer = bomb.player
+        if (bombPlayer && newStats.players[bombPlayer]) {
+          newStats.players[bombPlayer].bombs++
+          newStats.players[bombPlayer].bombScore += bombScore
+        }
+      })
+    }
+    countBombs(gameData.ourTeam.bombs, gameData.ourTeam.players)
+    countBombs(gameData.theirTeam.bombs, gameData.theirTeam.players)
+
+    // 统计历史记录中的炸弹
+    gameData.accumulated.our.hands.forEach(hand => {
+      (hand.bombs || []).forEach(bomb => {
+        const bombScore = bomb.score || bomb
+        const bombPlayer = bomb.player
+        if (bombPlayer && newStats.players[bombPlayer]) {
+          // 已在上面统计过，这里不重复
+        }
+      })
+    })
+
     setStats(newStats)
     storage.set('scoring_stats', newStats)
 
@@ -406,6 +432,7 @@ export default function App() {
                   team="our"
                   label="我方"
                   bombs={gameData.ourTeam.bombs}
+                  players={gameData.ourTeam.players}
                   onAdd={addBomb}
                   onRemove={removeBomb}
                   onClear={clearBombs}
@@ -415,6 +442,7 @@ export default function App() {
                   team="their"
                   label="对方"
                   bombs={gameData.theirTeam.bombs}
+                  players={gameData.theirTeam.players}
                   onAdd={addBomb}
                   onRemove={removeBomb}
                   onClear={clearBombs}
