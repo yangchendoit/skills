@@ -29,6 +29,10 @@ export default function App() {
     }
   })
 
+  // 输入框显示值的字符串状态
+  const [ourBaseInput, setOurBaseInput] = useState('')
+  const [theirBaseInput, setTheirBaseInput] = useState('')
+
   const [currentPage, setCurrentPage] = useState('scoring')
   const [showSetup, setShowSetup] = useState(false)
   const [showSettle, setShowSettle] = useState(false)
@@ -67,20 +71,28 @@ export default function App() {
 
   // 更新基础分（联动计算）
   const updateBaseScore = (team, value) => {
-    const numValue = parseInt(value) || 0
+    // 只允许输入数字
+    const numStr = value.replace(/[^0-9]/g, '')
+    const numValue = parseInt(numStr) || 0
+    const clampedValue = Math.max(0, Math.min(200, numValue))
+
     if (team === 'our') {
-      const theirBase = 200 - numValue
+      setOurBaseInput(numStr)
+      const theirBase = Math.max(0, Math.min(200, 200 - clampedValue))
+      setTheirBaseInput(theirBase.toString())
       setGameData(prev => ({
         ...prev,
-        ourTeam: { ...prev.ourTeam, baseScore: Math.max(0, Math.min(200, numValue)) },
-        theirTeam: { ...prev.theirTeam, baseScore: Math.max(0, Math.min(200, theirBase)) }
+        ourTeam: { ...prev.ourTeam, baseScore: clampedValue },
+        theirTeam: { ...prev.theirTeam, baseScore: theirBase }
       }))
     } else {
-      const ourBase = 200 - numValue
+      setTheirBaseInput(numStr)
+      const ourBase = Math.max(0, Math.min(200, 200 - clampedValue))
+      setOurBaseInput(ourBase.toString())
       setGameData(prev => ({
         ...prev,
-        theirTeam: { ...prev.theirTeam, baseScore: Math.max(0, Math.min(200, numValue)) },
-        ourTeam: { ...prev.ourTeam, baseScore: Math.max(0, Math.min(200, ourBase)) }
+        theirTeam: { ...prev.theirTeam, baseScore: clampedValue },
+        ourTeam: { ...prev.ourTeam, baseScore: ourBase }
       }))
     }
   }
@@ -165,6 +177,9 @@ export default function App() {
       theirTeam: { ...prev.theirTeam, baseScore: 0, bombs: [], tourBonus: 0 },
       tour: 'none'
     }))
+    // 重置输入框
+    setOurBaseInput('')
+    setTheirBaseInput('')
   }
 
   // 结算本局
@@ -264,6 +279,9 @@ export default function App() {
       theirTeam: { ...initialState.theirTeam, players: newPlayers.their },
       roundNum: gameData.roundNum + 1
     })
+    // 重置输入框
+    setOurBaseInput('')
+    setTheirBaseInput('')
     setShowSettle(false)
     setShowResult(false)
   }
@@ -277,6 +295,9 @@ export default function App() {
       theirTeam: { ...prev.theirTeam, baseScore: 0, bombs: [], tourBonus: 0 },
       tour: 'none'
     }))
+    // 重置输入框
+    setOurBaseInput('')
+    setTheirBaseInput('')
   }
 
   // 保存玩家
@@ -354,20 +375,22 @@ export default function App() {
                   <label>我方</label>
                   <input
                     type="number"
-                    value={gameData.ourTeam.baseScore}
+                    value={ourBaseInput}
                     onChange={(e) => updateBaseScore('our', e.target.value)}
                     min="0"
                     max="200"
+                    placeholder="0"
                   />
                 </div>
                 <div className="input-group">
                   <label>对方</label>
                   <input
                     type="number"
-                    value={gameData.theirTeam.baseScore}
+                    value={theirBaseInput}
                     onChange={(e) => updateBaseScore('their', e.target.value)}
                     min="0"
                     max="200"
+                    placeholder="0"
                   />
                 </div>
               </div>
