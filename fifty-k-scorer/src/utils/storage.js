@@ -43,7 +43,19 @@ export const TOUR_BONUSES = {
 };
 
 // 计算工具函数
-export const calculateLevel = (totalScore) => Math.round(totalScore / 100);
+export const calculateLevel = (totalScore) => {
+  // 每100分为1级，四舍五入
+  // 对于负分，-50到-149为-1级，-150到-249为-2级，以此类推
+  if (totalScore >= 0) {
+    return Math.round(totalScore / 100);
+  } else if (totalScore > -50) {
+    // -49 到 0 的负分，四舍五入到 0 级
+    return 0;
+  } else {
+    // -50 及以下的负分
+    return Math.floor((totalScore + 49) / 100);
+  }
+};
 
 export const calculateHandScore = (baseScore, bombs, tourBonus) => {
   const bombScore = bombs.reduce((sum, b) => sum + b, 0);
