@@ -13,6 +13,45 @@ export default function SetupPopup({ players, onSave, onClose }) {
     })
   }
 
+  // 交换队伍
+  const swapTeams = () => {
+    const temp1 = ourPlayer1
+    const temp2 = ourPlayer2
+    setOurPlayer1(theirPlayer1)
+    setOurPlayer2(theirPlayer2)
+    setTheirPlayer1(temp1)
+    setTheirPlayer2(temp2)
+  }
+
+  // 交换我方两个玩家
+  const swapOurPlayers = () => {
+    const temp = ourPlayer1
+    setOurPlayer1(ourPlayer2)
+    setOurPlayer2(temp)
+  }
+
+  // 交换对方两个玩家
+  const swapTheirPlayers = () => {
+    const temp = theirPlayer1
+    setTheirPlayer1(theirPlayer2)
+    setTheirPlayer2(temp)
+  }
+
+  // 交换玩家位置（指定两个玩家）
+  const swapPlayers = (pos1, pos2) => {
+    const positions = {
+      our1: [ourPlayer1, setOurPlayer1],
+      our2: [ourPlayer2, setOurPlayer2],
+      their1: [theirPlayer1, setTheirPlayer1],
+      their2: [theirPlayer2, setTheirPlayer2]
+    }
+    const [val1] = positions[pos1]
+    const [val2, setVal2] = positions[pos2]
+    const [, setVal1] = positions[pos1]
+    setVal1(val2)
+    setVal2(val1)
+  }
+
   return (
     <div className="popup show" onClick={(e) => e.target.classList.contains('popup') && onClose()}>
       <div className="popup-content">
@@ -20,7 +59,10 @@ export default function SetupPopup({ players, onSave, onClose }) {
         <div className="player-setup">
           <div className="player-grid">
             <div className="player-group our">
-              <div className="player-group-title">🟢 我方</div>
+              <div className="player-group-header">
+                <span className="player-group-title">🟢 我方</span>
+                <button className="swap-btn small" onClick={swapOurPlayers} title="交换位置">↕️</button>
+              </div>
               <div className="player-input">
                 <label>玩家1</label>
                 <input
@@ -42,8 +84,15 @@ export default function SetupPopup({ players, onSave, onClose }) {
                 />
               </div>
             </div>
+            <div className="swap-teams-container">
+              <button className="swap-btn" onClick={swapTeams} title="交换队伍">⇄</button>
+              <span className="swap-label">换队</span>
+            </div>
             <div className="player-group their">
-              <div className="player-group-title">🔴 对方</div>
+              <div className="player-group-header">
+                <span className="player-group-title">🔴 对方</span>
+                <button className="swap-btn small" onClick={swapTheirPlayers} title="交换位置">↕️</button>
+              </div>
               <div className="player-input">
                 <label>玩家3</label>
                 <input
