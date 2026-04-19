@@ -1,4 +1,7 @@
+import { useState } from 'react'
+
 export default function StatsPage({ stats, onClearAll }) {
+  const [expandedPlayer, setExpandedPlayer] = useState(null)
   const players = Object.entries(stats.players || {}).sort((a, b) => b[1].wins - a[1].wins)
   const bombRanking = Object.entries(stats.players || {})
     .filter(([, data]) => data.bombs > 0)
@@ -9,6 +12,10 @@ export default function StatsPage({ stats, onClearAll }) {
     if (confirm('确定清空所有统计数据？')) {
       onClearAll()
     }
+  }
+
+  const togglePlayer = (name) => {
+    setExpandedPlayer(expandedPlayer === name ? null : name)
   }
 
   // 幽默称号生成
@@ -47,12 +54,59 @@ export default function StatsPage({ stats, onClearAll }) {
             <div style={{ fontSize: 18, marginTop: 'var(--space-md)' }}>暂无数据</div>
           </div>
         ) : (
-          players.map(([name, data]) => (
-            <div key={name} className="player-stat-item">
-              <div className="player-stat-name">{name}</div>
-              <div className="player-stat-info">{data.wins}胜 / {data.games}局 ({Math.round(data.wins / data.games * 100)}%)</div>
-            </div>
-          ))
+          players.map(([name, data]) => {
+            const isExpanded = expandedPlayer === name
+            const winRate = data.games > 0 ? Math.round(data.wins / data.games * 100) : 0
+            return (
+              <div key={name} className="player-stat-card">
+                <div className="player-stat-header" onClick={() => togglePlayer(name)}>
+                  <div className="player-stat-main">
+                    <span className="player-name">{name}</span>
+                    <span className="player-win-rate">{winRate}%</span>
+                  </div>
+                  <div className="player-stat-summary">
+                    <span>{data.wins}胜{data.games}局</span>
+                    {data.level !== undefined && <span className="level-badge">{data.level}级</span>}
+                  </div>
+                  <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>▼</span>
+                </div>
+                {isExpanded && (
+                  <div className="player-stat-detail">
+                    <div className="detail-row">
+                      <span>总局数</span>
+                      <span>{data.games}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span>胜场</span>
+                      <span>{data.wins}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span>胜率</span>
+                      <span>{winRate}%</span>
+                    </div>
+                    {data.level !== undefined && (
+                      <div className="detail-row">
+                        <span>累计级数</span>
+                        <span className="level-badge">{data.level}级</span>
+                      </div>
+                    )}
+                    {data.bombs > 0 && (
+                      <>
+                        <div className="detail-row">
+                          <span>炸弹数</span>
+                          <span>{data.bombs}颗</span>
+                        </div>
+                        <div className="detail-row">
+                          <span>炸弹分</span>
+                          <span>{data.bombScore}分</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })
         )}
       </div>
 

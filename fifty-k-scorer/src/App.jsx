@@ -232,13 +232,22 @@ export default function App() {
     const newStats = { ...stats }
     newStats.totalGames++
     newStats.rounds = Math.max(newStats.rounds, gameData.roundNum)
+
+    // 计算本局级数
+    const ourLevelDiff = winner === 'our' ? Math.abs(scores.ourLevel - scores.theirLevel) :
+                         winner === 'their' ? -Math.abs(scores.ourLevel - scores.theirLevel) : 0
+    const theirLevelDiff = -ourLevelDiff
+
     ;[...gameData.ourTeam.players, ...gameData.theirTeam.players].forEach(name => {
-      if (!newStats.players[name]) newStats.players[name] = { games: 0, wins: 0, bombs: 0, bombScore: 0 }
+      if (!newStats.players[name]) newStats.players[name] = { games: 0, wins: 0, bombs: 0, bombScore: 0, level: 0 }
       newStats.players[name].games++
       if ((winner === 'our' && gameData.ourTeam.players.includes(name)) ||
           (winner === 'their' && gameData.theirTeam.players.includes(name))) {
         newStats.players[name].wins++
       }
+      // 累计级数
+      const isOurTeam = gameData.ourTeam.players.includes(name)
+      newStats.players[name].level = (newStats.players[name].level || 0) + (isOurTeam ? ourLevelDiff : theirLevelDiff)
     })
 
     // 统计炸弹（从累积的hands和当前bombs中）
