@@ -485,7 +485,9 @@ export default function App() {
             }}
             onClearAll={() => {
               setHistory([])
+              setStats({ totalGames: 0, rounds: 0, players: {} })
               storage.remove('scoring_history')
+              storage.remove('scoring_stats')
             }}
           />
         )}
@@ -494,7 +496,9 @@ export default function App() {
           <StatsPage
             stats={stats}
             onClearAll={() => {
+              setHistory([])
               setStats({ totalGames: 0, rounds: 0, players: {} })
+              storage.remove('scoring_history')
               storage.remove('scoring_stats')
             }}
           />
