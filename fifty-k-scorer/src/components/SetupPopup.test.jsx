@@ -15,21 +15,16 @@ describe('SetupPopup', () => {
 
   it('should render popup when visible', () => {
     render(<SetupPopup {...defaultProps} />)
-    expect(screen.getByText('👥 设置玩家')).toBeInTheDocument()
-  })
-
-  it('should render team labels', () => {
-    render(<SetupPopup {...defaultProps} />)
-    expect(screen.getByText('🟢 我方')).toBeInTheDocument()
-    expect(screen.getByText('🔴 对方')).toBeInTheDocument()
+    expect(screen.getByText(/设置玩家/)).toBeInTheDocument()
   })
 
   it('should render player inputs', () => {
     render(<SetupPopup {...defaultProps} />)
-    expect(screen.getByText('玩家1')).toBeInTheDocument()
-    expect(screen.getByText('玩家2')).toBeInTheDocument()
-    expect(screen.getByText('玩家3')).toBeInTheDocument()
-    expect(screen.getByText('玩家4')).toBeInTheDocument()
+    const inputs = screen.getAllByRole('textbox')
+    expect(inputs).toHaveLength(4)
+    inputs.forEach(input => {
+      expect(input).toHaveAttribute('placeholder', '玩家名')
+    })
   })
 
   it('should render action buttons', () => {
@@ -45,7 +40,7 @@ describe('SetupPopup', () => {
     }
     render(<SetupPopup {...defaultProps} players={players} />)
 
-    const inputs = screen.getAllByPlaceholderText('输入姓名')
+    const inputs = screen.getAllByRole('textbox')
     expect(inputs[0]).toHaveValue('张三')
     expect(inputs[1]).toHaveValue('李四')
     expect(inputs[2]).toHaveValue('王五')
@@ -64,7 +59,7 @@ describe('SetupPopup', () => {
     const onSave = vi.fn()
     render(<SetupPopup {...defaultProps} onSave={onSave} />)
 
-    const inputs = screen.getAllByPlaceholderText('输入姓名')
+    const inputs = screen.getAllByRole('textbox')
     await userEvent.type(inputs[0], '张三')
     await userEvent.type(inputs[1], '李四')
     await userEvent.type(inputs[2], '王五')
@@ -82,7 +77,6 @@ describe('SetupPopup', () => {
     const onClose = vi.fn()
     const { container } = render(<SetupPopup {...defaultProps} onClose={onClose} />)
 
-    // Click on the popup overlay (the backdrop)
     const overlay = container.querySelector('.popup')
     fireEvent.click(overlay)
 
@@ -93,9 +87,8 @@ describe('SetupPopup', () => {
     const onSave = vi.fn()
     render(<SetupPopup {...defaultProps} onSave={onSave} />)
 
-    const inputs = screen.getAllByPlaceholderText('输入姓名')
+    const inputs = screen.getAllByRole('textbox')
     await userEvent.type(inputs[0], '张三')
-    // Don't fill other inputs
 
     await userEvent.click(screen.getByText('确认'))
 
@@ -109,7 +102,7 @@ describe('SetupPopup', () => {
     const onSave = vi.fn()
     render(<SetupPopup {...defaultProps} onSave={onSave} />)
 
-    const inputs = screen.getAllByPlaceholderText('输入姓名')
+    const inputs = screen.getAllByRole('textbox')
     await userEvent.type(inputs[0], '  张三  ')
 
     await userEvent.click(screen.getByText('确认'))
@@ -118,5 +111,53 @@ describe('SetupPopup', () => {
       our: ['张三', ''],
       their: ['', '']
     })
+  })
+
+  it('should select player slot on click', async () => {
+    const players = {
+      our: ['张三', '李四'],
+      their: ['王五', '赵六']
+    }
+    render(<SetupPopup {...defaultProps} players={players} />)
+
+    const slots = document.querySelectorAll('.player-slot')
+    await userEvent.click(slots[0])
+
+    expect(slots[0]).toHaveClass('selected')
+  })
+
+  it('should swap any two players when clicking two slots', async () => {
+    const players = {
+      our: ['张三', '李四'],
+      their: ['王五', '赵六']
+    }
+    render(<SetupPopup {...defaultProps} players={players} />)
+
+    const slots = document.querySelectorAll('.player-slot')
+    // Click first slot (张三)
+    await userEvent.click(slots[0])
+    expect(slots[0]).toHaveClass('selected')
+
+    // Click third slot (王五) - should swap
+    await userEvent.click(slots[2])
+
+    const inputs = screen.getAllByRole('textbox')
+    expect(inputs[0]).toHaveValue('王五')
+    expect(inputs[2]).toHaveValue('张三')
+  })
+
+  it('should deselect when clicking same slot again', async () => {
+    const players = {
+      our: ['张三', '李四'],
+      their: ['王五', '赵六']
+    }
+    render(<SetupPopup {...defaultProps} players={players} />)
+
+    const slots = document.querySelectorAll('.player-slot')
+    await userEvent.click(slots[0])
+    expect(slots[0]).toHaveClass('selected')
+
+    await userEvent.click(slots[0])
+    expect(slots[0]).not.toHaveClass('selected')
   })
 })

@@ -1,124 +1,113 @@
 import { useState } from 'react'
 
 export default function SetupPopup({ players, onSave, onClose }) {
-  const [ourPlayer1, setOurPlayer1] = useState(players.our[0] || '')
-  const [ourPlayer2, setOurPlayer2] = useState(players.our[1] || '')
-  const [theirPlayer1, setTheirPlayer1] = useState(players.their[0] || '')
-  const [theirPlayer2, setTheirPlayer2] = useState(players.their[1] || '')
+  const [playerValues, setPlayerValues] = useState([
+    players.our[0] || '',
+    players.our[1] || '',
+    players.their[0] || '',
+    players.their[1] || ''
+  ])
+  const [selectedIndex, setSelectedIndex] = useState(null)
+
+  const handleChange = (index, value) => {
+    const newValues = [...playerValues]
+    newValues[index] = value
+    setPlayerValues(newValues)
+  }
+
+  const handleSlotClick = (index) => {
+    if (selectedIndex === null) {
+      // 第一次点击，选中
+      setSelectedIndex(index)
+    } else if (selectedIndex === index) {
+      // 点击已选中的，取消选中
+      setSelectedIndex(null)
+    } else {
+      // 第二次点击，交换
+      const newValues = [...playerValues]
+      const temp = newValues[selectedIndex]
+      newValues[selectedIndex] = newValues[index]
+      newValues[index] = temp
+      setPlayerValues(newValues)
+      setSelectedIndex(null)
+    }
+  }
 
   const handleSave = () => {
     onSave({
-      our: [ourPlayer1.trim(), ourPlayer2.trim()],
-      their: [theirPlayer1.trim(), theirPlayer2.trim()]
+      our: [playerValues[0].trim(), playerValues[1].trim()],
+      their: [playerValues[2].trim(), playerValues[3].trim()]
     })
   }
 
-  // 交换队伍
-  const swapTeams = () => {
-    const temp1 = ourPlayer1
-    const temp2 = ourPlayer2
-    setOurPlayer1(theirPlayer1)
-    setOurPlayer2(theirPlayer2)
-    setTheirPlayer1(temp1)
-    setTheirPlayer2(temp2)
-  }
-
-  // 交换我方两个玩家
-  const swapOurPlayers = () => {
-    const temp = ourPlayer1
-    setOurPlayer1(ourPlayer2)
-    setOurPlayer2(temp)
-  }
-
-  // 交换对方两个玩家
-  const swapTheirPlayers = () => {
-    const temp = theirPlayer1
-    setTheirPlayer1(theirPlayer2)
-    setTheirPlayer2(temp)
-  }
-
-  // 交换玩家位置（指定两个玩家）
-  const swapPlayers = (pos1, pos2) => {
-    const positions = {
-      our1: [ourPlayer1, setOurPlayer1],
-      our2: [ourPlayer2, setOurPlayer2],
-      their1: [theirPlayer1, setTheirPlayer1],
-      their2: [theirPlayer2, setTheirPlayer2]
-    }
-    const [val1] = positions[pos1]
-    const [val2, setVal2] = positions[pos2]
-    const [, setVal1] = positions[pos1]
-    setVal1(val2)
-    setVal2(val1)
+  const getSlotClass = (index, team) => {
+    let classes = 'player-slot ' + team
+    if (selectedIndex === index) classes += ' selected'
+    return classes
   }
 
   return (
     <div className="popup show" onClick={(e) => e.target.classList.contains('popup') && onClose()}>
-      <div className="popup-content">
+      <div className="popup-content setup-popup">
         <div className="popup-title">👥 设置玩家</div>
-        <div className="player-setup">
-          <div className="player-grid">
-            <div className="player-group our">
-              <div className="player-group-header">
-                <span className="player-group-title">🟢 我方</span>
-                <button className="swap-btn small" onClick={swapOurPlayers} title="交换位置">↕️</button>
-              </div>
-              <div className="player-input">
-                <label>玩家1</label>
-                <input
-                  type="text"
-                  value={ourPlayer1}
-                  onChange={(e) => setOurPlayer1(e.target.value)}
-                  placeholder="输入姓名"
-                  maxLength={6}
-                />
-              </div>
-              <div className="player-input">
-                <label>玩家2</label>
-                <input
-                  type="text"
-                  value={ourPlayer2}
-                  onChange={(e) => setOurPlayer2(e.target.value)}
-                  placeholder="输入姓名"
-                  maxLength={6}
-                />
-              </div>
+        <p className="setup-hint">点击选择玩家，再点击另一个玩家交换位置</p>
+        <div className="setup-content">
+          <div className="setup-teams-label">
+            <span className="team-label our">我方</span>
+            <span className="team-label their">对方</span>
+          </div>
+          <div className="player-row">
+            <div className={getSlotClass(0, 'our')} onClick={() => handleSlotClick(0)}>
+              <span className="slot-index">1</span>
+              <input
+                type="text"
+                value={playerValues[0]}
+                onChange={(e) => handleChange(0, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="玩家名"
+                maxLength={6}
+              />
             </div>
-            <div className="swap-teams-container">
-              <button className="swap-btn" onClick={swapTeams} title="交换队伍">⇄</button>
-              <span className="swap-label">换队</span>
+            <div className={getSlotClass(2, 'their')} onClick={() => handleSlotClick(2)}>
+              <span className="slot-index">3</span>
+              <input
+                type="text"
+                value={playerValues[2]}
+                onChange={(e) => handleChange(2, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="玩家名"
+                maxLength={6}
+              />
             </div>
-            <div className="player-group their">
-              <div className="player-group-header">
-                <span className="player-group-title">🔴 对方</span>
-                <button className="swap-btn small" onClick={swapTheirPlayers} title="交换位置">↕️</button>
-              </div>
-              <div className="player-input">
-                <label>玩家3</label>
-                <input
-                  type="text"
-                  value={theirPlayer1}
-                  onChange={(e) => setTheirPlayer1(e.target.value)}
-                  placeholder="输入姓名"
-                  maxLength={6}
-                />
-              </div>
-              <div className="player-input">
-                <label>玩家4</label>
-                <input
-                  type="text"
-                  value={theirPlayer2}
-                  onChange={(e) => setTheirPlayer2(e.target.value)}
-                  placeholder="输入姓名"
-                  maxLength={6}
-                />
-              </div>
+          </div>
+          <div className="player-row">
+            <div className={getSlotClass(1, 'our')} onClick={() => handleSlotClick(1)}>
+              <span className="slot-index">2</span>
+              <input
+                type="text"
+                value={playerValues[1]}
+                onChange={(e) => handleChange(1, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="玩家名"
+                maxLength={6}
+              />
+            </div>
+            <div className={getSlotClass(3, 'their')} onClick={() => handleSlotClick(3)}>
+              <span className="slot-index">4</span>
+              <input
+                type="text"
+                value={playerValues[3]}
+                onChange={(e) => handleChange(3, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="玩家名"
+                maxLength={6}
+              />
             </div>
           </div>
         </div>
         <div className="popup-buttons">
-          <button className="btn btn-primary" onClick={handleSave}>确认</button>
           <button className="btn btn-secondary" onClick={onClose}>取消</button>
+          <button className="btn btn-primary" onClick={handleSave}>确认</button>
         </div>
       </div>
     </div>

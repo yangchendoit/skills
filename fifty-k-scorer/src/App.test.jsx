@@ -138,26 +138,24 @@ describe('App', () => {
     it('should open setup popup when clicking setup button', async () => {
       render(<App />)
       await userEvent.click(screen.getByRole('button', { name: /设置玩家/ }))
-      // The popup title contains the same text, but player labels are unique
-      expect(screen.getByText('玩家1')).toBeInTheDocument()
-      expect(screen.getByText('玩家2')).toBeInTheDocument()
-      expect(screen.getByText('玩家3')).toBeInTheDocument()
-      expect(screen.getByText('玩家4')).toBeInTheDocument()
+      // Check for player inputs
+      const inputs = screen.getAllByRole('textbox')
+      expect(inputs).toHaveLength(4)
     })
 
     it('should close setup popup when clicking cancel', async () => {
       render(<App />)
       await userEvent.click(screen.getByRole('button', { name: /设置玩家/ }))
       await userEvent.click(screen.getByText('取消'))
-      // After closing, player labels should not be visible
-      expect(screen.queryByText('玩家1')).not.toBeInTheDocument()
+      // After closing, inputs should not be visible
+      expect(screen.queryAllByRole('textbox')).toHaveLength(0)
     })
 
     it('should save player names', async () => {
       render(<App />)
       await userEvent.click(screen.getByRole('button', { name: /设置玩家/ }))
 
-      const inputs = screen.getAllByPlaceholderText('输入姓名')
+      const inputs = screen.getAllByRole('textbox')
       await userEvent.type(inputs[0], '张三')
       await userEvent.type(inputs[1], '李四')
       await userEvent.type(inputs[2], '王五')
@@ -183,7 +181,7 @@ describe('App', () => {
 
       // Set up players
       await userEvent.click(screen.getByRole('button', { name: /设置玩家/ }))
-      const inputs = screen.getAllByPlaceholderText('输入姓名')
+      const inputs = screen.getAllByRole('textbox')
       await userEvent.type(inputs[0], '张三')
       await userEvent.type(inputs[1], '李四')
       await userEvent.type(inputs[2], '王五')
@@ -203,8 +201,8 @@ describe('App', () => {
     it('should show hand list after recording a hand', async () => {
       render(<App />)
       // Set up players
-      await userEvent.click(screen.getByText('👥 设置玩家'))
-      const inputs = screen.getAllByPlaceholderText('输入姓名')
+      await userEvent.click(screen.getByRole('button', { name: /设置玩家/ }))
+      const inputs = screen.getAllByRole('textbox')
       await userEvent.type(inputs[0], '张三')
       await userEvent.type(inputs[1], '李四')
       await userEvent.type(inputs[2], '王五')
