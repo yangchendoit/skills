@@ -241,30 +241,23 @@ export default function App() {
       }
     })
 
-    // 统计炸弹
-    const countBombs = (bombs, teamPlayers) => {
+    // 统计炸弹（从累积的hands和当前bombs中）
+    const countBombs = (bombs) => {
       bombs.forEach(bomb => {
         const bombScore = bomb.score || bomb
         const bombPlayer = bomb.player
         if (bombPlayer && newStats.players[bombPlayer]) {
-          newStats.players[bombPlayer].bombs++
-          newStats.players[bombPlayer].bombScore += bombScore
+          newStats.players[bombPlayer].bombs = (newStats.players[bombPlayer].bombs || 0) + 1
+          newStats.players[bombPlayer].bombScore = (newStats.players[bombPlayer].bombScore || 0) + bombScore
         }
       })
     }
-    countBombs(gameData.ourTeam.bombs, gameData.ourTeam.players)
-    countBombs(gameData.theirTeam.bombs, gameData.theirTeam.players)
-
-    // 统计历史记录中的炸弹
-    gameData.accumulated.our.hands.forEach(hand => {
-      (hand.bombs || []).forEach(bomb => {
-        const bombScore = bomb.score || bomb
-        const bombPlayer = bomb.player
-        if (bombPlayer && newStats.players[bombPlayer]) {
-          // 已在上面统计过，这里不重复
-        }
-      })
-    })
+    // 统计累积hands中的炸弹
+    gameData.accumulated.our.hands.forEach(hand => countBombs(hand.bombs || []))
+    gameData.accumulated.their.hands.forEach(hand => countBombs(hand.bombs || []))
+    // 统计当前bombs（结算时可能还有未记录的炸弹）
+    countBombs(gameData.ourTeam.bombs)
+    countBombs(gameData.theirTeam.bombs)
 
     setStats(newStats)
     storage.set('scoring_stats', newStats)
