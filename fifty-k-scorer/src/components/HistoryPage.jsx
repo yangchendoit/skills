@@ -1,6 +1,6 @@
 import { BOMB_LABELS } from '../utils/storage'
 
-export default function HistoryPage({ history, searchTerm, onSearch, onDelete }) {
+export default function HistoryPage({ history, searchTerm, onSearch, onDelete, onClearAll }) {
   const filtered = searchTerm
     ? history.filter(h =>
         h.ourTeam.players.some(p => p.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -13,10 +13,22 @@ export default function HistoryPage({ history, searchTerm, onSearch, onDelete })
     e.currentTarget.classList.toggle('expanded')
   }
 
+  const handleClearAll = () => {
+    if (history.length === 0) return
+    if (confirm('确定清空所有历史记录？')) {
+      onClearAll()
+    }
+  }
+
   return (
     <div className="page active">
       <div className="section">
-        <div className="section-title"><span>📜 游戏历史</span></div>
+        <div className="section-title">
+          <span>📜 游戏历史</span>
+          {history.length > 0 && (
+            <button className="clear-btn" onClick={handleClearAll}>清空</button>
+          )}
+        </div>
         <div className="search-box">
           <input
             type="text"

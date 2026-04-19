@@ -483,10 +483,22 @@ export default function App() {
               setHistory(updated)
               storage.set('scoring_history', updated)
             }}
+            onClearAll={() => {
+              setHistory([])
+              storage.remove('scoring_history')
+            }}
           />
         )}
 
-        {currentPage === 'stats' && <StatsPage stats={stats} />}
+        {currentPage === 'stats' && (
+          <StatsPage
+            stats={stats}
+            onClearAll={() => {
+              setStats({ totalGames: 0, rounds: 0, players: {} })
+              storage.remove('scoring_stats')
+            }}
+          />
+        )}
       </main>
 
       <nav className="nav">

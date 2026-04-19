@@ -1,10 +1,22 @@
-export default function StatsPage({ stats }) {
+export default function StatsPage({ stats, onClearAll }) {
   const players = Object.entries(stats.players || {}).sort((a, b) => b[1].wins - a[1].wins)
+
+  const handleClearAll = () => {
+    if (stats.totalGames === 0) return
+    if (confirm('确定清空所有统计数据？')) {
+      onClearAll()
+    }
+  }
 
   return (
     <div className="page active">
       <div className="section">
-        <div className="section-title"><span>📊 统计</span></div>
+        <div className="section-title">
+          <span>📊 统计</span>
+          {stats.totalGames > 0 && (
+            <button className="clear-btn" onClick={handleClearAll}>清空</button>
+          )}
+        </div>
         <div className="stats-grid">
           <div className="stat-item">
             <div className="stat-number">{stats.totalGames || 0}</div>
