@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BOMB_LABELS } from '../utils/storage'
 
 export default function StatsPage({ stats, onClearAll }) {
   const [expandedPlayer, setExpandedPlayer] = useState(null)
@@ -68,6 +69,7 @@ export default function StatsPage({ stats, onClearAll }) {
                     <span>{data.wins}胜{data.games}局</span>
                     {data.level !== undefined && <span className="level-badge">{data.level}级</span>}
                   </div>
+                  <div className="player-max-level">最高{data.maxLevel || 0}级</div>
                   <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>▼</span>
                 </div>
                 {isExpanded && (
@@ -87,7 +89,13 @@ export default function StatsPage({ stats, onClearAll }) {
                     {data.level !== undefined && (
                       <div className="detail-row">
                         <span>累计级数</span>
-                        <span className="level-badge">{data.level}级</span>
+                        <span className={data.level >= 0 ? 'text-accent' : 'text-red'}>{data.level}级</span>
+                      </div>
+                    )}
+                    {data.maxLevel !== undefined && (
+                      <div className="detail-row">
+                        <span>历史最高</span>
+                        <span className="level-badge">{data.maxLevel}级</span>
                       </div>
                     )}
                     {data.bombs > 0 && (
@@ -113,23 +121,33 @@ export default function StatsPage({ stats, onClearAll }) {
       {bombRanking.length > 0 && (
         <div className="section">
           <div className="section-title"><span>💣 炸弹榜</span></div>
-          {bombRanking.map(([name, data], index) => (
-            <div key={name} className="bomb-rank-item">
-              <div className="bomb-rank-header">
-                <span className="bomb-rank-name">
-                  {index === 0 && '🥇 '}
-                  {index === 1 && '🥈 '}
-                  {index === 2 && '🥉 '}
-                  {name}
-                </span>
-                <span className="bomb-rank-title">{getBombTitle(index, data.bombScore)}</span>
+          {bombRanking.map(([name, data], index) => {
+            const bombTypes = data.bombTypes || {}
+            return (
+              <div key={name} className="bomb-rank-item">
+                <div className="bomb-rank-header">
+                  <span className="bomb-rank-name">
+                    {index === 0 && '🥇 '}
+                    {index === 1 && '🥈 '}
+                    {index === 2 && '🥉 '}
+                    {name}
+                  </span>
+                  <span className="bomb-rank-title">{getBombTitle(index, data.bombScore)}</span>
+                </div>
+                <div className="bomb-rank-stats">
+                  <span>投弹 {data.bombs} 颗</span>
+                  <span>总分 {data.bombScore}</span>
+                </div>
+                {Object.keys(bombTypes).length > 0 && (
+                  <div className="bomb-types-row">
+                    {Object.entries(bombTypes).map(([score, count]) => (
+                      <span key={score} className="bomb-type-tag">{BOMB_LABELS[score]}×{count}</span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="bomb-rank-stats">
-                <span>投弹 {data.bombs} 颗</span>
-                <span>总分 {data.bombScore}</span>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

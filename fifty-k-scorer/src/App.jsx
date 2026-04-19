@@ -239,7 +239,7 @@ export default function App() {
     const theirLevelDiff = -ourLevelDiff
 
     ;[...gameData.ourTeam.players, ...gameData.theirTeam.players].forEach(name => {
-      if (!newStats.players[name]) newStats.players[name] = { games: 0, wins: 0, bombs: 0, bombScore: 0, level: 0 }
+      if (!newStats.players[name]) newStats.players[name] = { games: 0, wins: 0, bombs: 0, bombScore: 0, level: 0, maxLevel: 0, bombTypes: {} }
       newStats.players[name].games++
       if ((winner === 'our' && gameData.ourTeam.players.includes(name)) ||
           (winner === 'their' && gameData.theirTeam.players.includes(name))) {
@@ -247,7 +247,11 @@ export default function App() {
       }
       // 累计级数
       const isOurTeam = gameData.ourTeam.players.includes(name)
-      newStats.players[name].level = (newStats.players[name].level || 0) + (isOurTeam ? ourLevelDiff : theirLevelDiff)
+      const levelChange = isOurTeam ? ourLevelDiff : theirLevelDiff
+      newStats.players[name].level = (newStats.players[name].level || 0) + levelChange
+      // 历史最高级数
+      const currentLevel = newStats.players[name].level
+      newStats.players[name].maxLevel = Math.max(newStats.players[name].maxLevel || 0, currentLevel)
     })
 
     // 统计炸弹（从累积的hands和当前bombs中）
@@ -258,6 +262,9 @@ export default function App() {
         if (bombPlayer && newStats.players[bombPlayer]) {
           newStats.players[bombPlayer].bombs = (newStats.players[bombPlayer].bombs || 0) + 1
           newStats.players[bombPlayer].bombScore = (newStats.players[bombPlayer].bombScore || 0) + bombScore
+          // 记录炸弹类型
+          if (!newStats.players[bombPlayer].bombTypes) newStats.players[bombPlayer].bombTypes = {}
+          newStats.players[bombPlayer].bombTypes[bombScore] = (newStats.players[bombPlayer].bombTypes[bombScore] || 0) + 1
         }
       })
     }

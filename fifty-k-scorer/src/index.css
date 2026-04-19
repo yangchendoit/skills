@@ -257,6 +257,21 @@ body {
   color: #94A3B8;
 }
 
+.bomb-types-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.bomb-type-tag {
+  font-size: 10px;
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--color-warning);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 .player-stats-title {
   font-size: 14px;
   font-weight: 700;
@@ -289,6 +304,7 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  flex: 1;
 }
 
 .player-name {
@@ -308,6 +324,12 @@ body {
   gap: var(--space-sm);
   font-size: 12px;
   color: #94A3B8;
+}
+
+.player-max-level {
+  font-size: 11px;
+  color: #F59E0B;
+  margin-left: var(--space-sm);
 }
 
 .expand-icon {
@@ -335,6 +357,9 @@ body {
 .detail-row span:first-child {
   color: #94A3B8;
 }
+
+.text-accent { color: var(--color-accent); }
+.text-red { color: var(--color-primary); }
 
 .vs {
   font-size: 14px;
