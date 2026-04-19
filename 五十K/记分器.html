@@ -236,10 +236,10 @@
                     <div id="hand-list"></div>
                 </div>
                 <section class="section">
-                    <div class="section-title"><span>🎯 基础分</span><span style="font-size:12px;color:#64748B;">总分200</span></div>
+                    <div class="section-title"><span>🎯 基础分</span><span style="font-size:12px;color:#64748B;">总分200，自动计算</span></div>
                     <div class="base-score-row">
                         <div class="input-group"><label>我方</label><input type="number" id="our-base" value="0" min="0" max="200"></div>
-                        <div class="input-group"><label>对方</label><input type="number" id="their-base" value="200" readonly></div>
+                        <div class="input-group"><label>对方</label><input type="number" id="their-base" value="0" min="0" max="200"></div>
                     </div>
                 </section>
                 <section class="section">
@@ -461,8 +461,17 @@
         }
 
         // 分数计算（当前把）
-        function updateBaseScore() {
-            el.theirBase.value = Math.max(0, 200 - (parseInt(el.ourBase.value) || 0));
+        function updateBaseScore(sourceTeam) {
+            // 联动计算：输入一方时自动计算另一方，总和为200
+            if (sourceTeam === 'our') {
+                const ourBase = parseInt(el.ourBase.value) || 0;
+                const theirBase = 200 - ourBase;
+                el.theirBase.value = Math.max(0, Math.min(200, theirBase));
+            } else if (sourceTeam === 'their') {
+                const theirBase = parseInt(el.theirBase.value) || 0;
+                const ourBase = 200 - theirBase;
+                el.ourBase.value = Math.max(0, Math.min(200, ourBase));
+            }
             updateScores();
         }
         function updateTourBonus() {
@@ -479,7 +488,7 @@
             gameData.theirTeam.baseScore = parseInt(el.theirBase.value) || 0;
             gameData.theirTeam.bombScore = gameData.theirTeam.bombs.reduce((s, b) => s + b, 0);
 
-            // 当前把得分
+            // 当前把得分（支持负分）
             const ourHandScore = gameData.ourTeam.baseScore + gameData.ourTeam.bombScore + gameData.ourTeam.tourBonus;
             const theirHandScore = gameData.theirTeam.baseScore + gameData.theirTeam.bombScore + gameData.theirTeam.tourBonus;
 
@@ -487,17 +496,14 @@
             gameData.ourTeam.totalScore = gameData.accumulated.our.totalScore + ourHandScore;
             gameData.theirTeam.totalScore = gameData.accumulated.their.totalScore + theirHandScore;
 
-            // 级数
+            // 级数（支持负级数）
             gameData.ourTeam.level = Math.round(gameData.ourTeam.totalScore / 100);
             gameData.theirTeam.level = Math.round(gameData.theirTeam.totalScore / 100);
 
-            // 显示（累积 + 当前）
-            const ourAccumLabel = gameData.accumulated.our.totalScore > 0 ? `(${gameData.accumulated.our.totalScore}+)` : '';
-            const theirAccumLabel = gameData.accumulated.their.totalScore > 0 ? `(${gameData.accumulated.their.totalScore}+)` : '';
-
-            el.ourScore.textContent = gameData.ourTeam.totalScore + '分';
+            // 显示分数（显示正负号）
+            el.ourScore.textContent = (gameData.ourTeam.totalScore >= 0 ? '' : '') + gameData.ourTeam.totalScore + '分';
             el.ourLevel.textContent = gameData.ourTeam.level + '级';
-            el.theirScore.textContent = gameData.theirTeam.totalScore + '分';
+            el.theirScore.textContent = (gameData.theirTeam.totalScore >= 0 ? '' : '') + gameData.theirTeam.totalScore + '分';
             el.theirLevel.textContent = gameData.theirTeam.level + '级';
         }
 
@@ -591,8 +597,10 @@
         function resetCurrentHand() {
             gameData.ourTeam.bombs = [];
             gameData.theirTeam.bombs = [];
+            gameData.ourTeam.tourBonus = 0;
+            gameData.theirTeam.tourBonus = 0;
             el.ourBase.value = 0;
-            el.theirBase.value = 200;
+            el.theirBase.value = 0;
             document.querySelector('input[name="tour"][value="none"]').checked = true;
             updateBombList('our');
             updateBombList('their');
@@ -680,7 +688,7 @@
 
             localStorage.setItem('scoring_players', JSON.stringify({ our: gameData.ourTeam.players, their: gameData.theirTeam.players }));
 
-            el.ourBase.value = 0; el.theirBase.value = 200;
+            el.ourBase.value = 0; el.theirBase.value = 0;
             document.querySelector('input[name="tour"][value="none"]').checked = true;
             updateBombList('our'); updateBombList('their'); updateScores(); updatePlayersDisplay();
             el.roundNum.textContent = gameData.roundNum;
@@ -812,7 +820,8 @@
             else if (action === 'new-game-same') newGame(true);
             else if (action === 'new-game-switch') newGame(false);
         });
-        el.ourBase.addEventListener('input', updateBaseScore);
+        el.ourBase.addEventListener('input', () => updateBaseScore('our'));
+        el.theirBase.addEventListener('input', () => updateBaseScore('their'));
         document.querySelectorAll('input[name="tour"]').forEach(r => r.addEventListener('change', updateTourBonus));
         el.historySearch.addEventListener('input', e => loadHistory(e.target.value));
         $('bomb-help').addEventListener('click', () => el.rulesPopup.classList.add('show'));
