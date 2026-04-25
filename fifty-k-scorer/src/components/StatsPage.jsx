@@ -1,19 +1,12 @@
 import { useState } from 'react'
 import { BOMB_LABELS } from '../utils/storage'
 
-export default function StatsPage({ stats, onClearAll }) {
+export default function StatsPage({ stats }) {
   const [expandedPlayer, setExpandedPlayer] = useState(null)
   const players = Object.entries(stats.players || {}).sort((a, b) => b[1].wins - a[1].wins)
   const bombRanking = Object.entries(stats.players || {})
     .filter(([, data]) => data.bombs > 0)
     .sort((a, b) => b[1].bombScore - a[1].bombScore)
-
-  const handleClearAll = () => {
-    if (stats.totalGames === 0) return
-    if (confirm('确定清空所有统计数据？')) {
-      onClearAll()
-    }
-  }
 
   const togglePlayer = (name) => {
     setExpandedPlayer(expandedPlayer === name ? null : name)
@@ -34,9 +27,6 @@ export default function StatsPage({ stats, onClearAll }) {
       <div className="section">
         <div className="section-title">
           <span>📊 统计</span>
-          {stats.totalGames > 0 && (
-            <button className="clear-btn" onClick={handleClearAll}>清空</button>
-          )}
         </div>
         <div className="stats-grid">
           <div className="stat-item">

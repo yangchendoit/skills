@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { storage, BOMB_LABELS, TOUR_BONUSES, calculateLevel, calculateHandScore, determineWinner } from './utils/storage'
+import { storage, BOMB_LABELS, TOUR_BONUSES, calculateLevel, calculateHandScore, determineWinner, computeStatsFromHistory } from './utils/storage'
 import SetupPopup from './components/SetupPopup'
 import SettlePopup from './components/SettlePopup'
 import RulesPopup from './components/RulesPopup'
@@ -40,8 +40,8 @@ export default function App() {
   const [settleResult, setSettleResult] = useState(null)
   const [showResult, setShowResult] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [stats, setStats] = useState(() => storage.get('scoring_stats', { totalGames: 0, rounds: 0, players: {} }))
   const [history, setHistory] = useState(() => storage.get('scoring_history', []))
+  const stats = computeStatsFromHistory(history)
 
   // 计算当前分数
   const calculateScores = useCallback(() => {
@@ -192,35 +192,43 @@ export default function App() {
       return
     }
 
-    // 如果当前把有数据，先记录
-    if (scores.ourHandScore > 0 || scores.theirHandScore > 0) {
-      if (confirm('当前把有未记录的分数，是否先记录再结算？')) {
-        recordHand()
-      }
+    // 计算含当前把的最终分数
+    const hasCurrentHand = scores.ourHandScore > 0 || scores.theirHandScore > 0
+    const finalOurTotal = scores.ourTotal + (hasCurrentHand ? scores.ourHandScore : 0)
+    const finalTheirTotal = scores.theirTotal + (hasCurrentHand ? scores.theirHandScore : 0)
+    const finalOurLevel = calculateLevel(finalOurTotal)
+    const finalTheirLevel = calculateLevel(finalTheirTotal)
+    const winner = determineWinner(finalOurLevel, finalTheirLevel, finalOurTotal, finalTheirTotal)
+
+    // 构建最终hands列表（含当前把）
+    const ourHands = [...gameData.accumulated.our.hands]
+    const theirHands = [...gameData.accumulated.their.hands]
+    if (hasCurrentHand) {
+      ourHands.push({
+        baseScore: gameData.ourTeam.baseScore,
+        bombScore: gameData.ourTeam.bombs.reduce((s, b) => s + (b.score || b), 0),
+        bombs: [...gameData.ourTeam.bombs],
+        tourBonus: gameData.ourTeam.tourBonus,
+        totalScore: scores.ourHandScore
+      })
+      theirHands.push({
+        baseScore: gameData.theirTeam.baseScore,
+        bombScore: gameData.theirTeam.bombs.reduce((s, b) => s + (b.score || b), 0),
+        bombs: [...gameData.theirTeam.bombs],
+        tourBonus: gameData.theirTeam.tourBonus,
+        totalScore: scores.theirHandScore
+      })
     }
+    const totalHands = ourHands.length
 
-    const winner = determineWinner(scores.ourLevel, scores.theirLevel, scores.ourTotal, scores.theirTotal)
-    const totalHands = gameData.handNum - 1
-
-    // 保存历史
     const newHistory = {
       id: Date.now(),
       timestamp: new Date().toLocaleString('zh-CN'),
       round: gameData.roundNum,
       totalHands,
-      ourTeam: {
-        players: [...gameData.ourTeam.players],
-        totalScore: scores.ourTotal,
-        level: scores.ourLevel,
-        hands: [...gameData.accumulated.our.hands]
-      },
-      theirTeam: {
-        players: [...gameData.theirTeam.players],
-        totalScore: scores.theirTotal,
-        level: scores.theirLevel,
-        hands: [...gameData.accumulated.their.hands]
-      },
-      levelDiff: scores.ourLevel - scores.theirLevel,
+      ourTeam: { players: [...gameData.ourTeam.players], totalScore: finalOurTotal, level: finalOurLevel, hands: ourHands },
+      theirTeam: { players: [...gameData.theirTeam.players], totalScore: finalTheirTotal, level: finalTheirLevel, hands: theirHands },
+      levelDiff: finalOurLevel - finalTheirLevel,
       winner
     }
 
@@ -228,68 +236,21 @@ export default function App() {
     setHistory(updatedHistory)
     storage.set('scoring_history', updatedHistory)
 
-    // 更新统计
-    const newStats = { ...stats }
-    newStats.totalGames++
-    newStats.rounds = Math.max(newStats.rounds, gameData.roundNum)
-
-    // 计算本局级数
-    const ourLevelDiff = winner === 'our' ? Math.abs(scores.ourLevel - scores.theirLevel) :
-                         winner === 'their' ? -Math.abs(scores.ourLevel - scores.theirLevel) : 0
-    const theirLevelDiff = -ourLevelDiff
-
-    ;[...gameData.ourTeam.players, ...gameData.theirTeam.players].forEach(name => {
-      if (!newStats.players[name]) newStats.players[name] = { games: 0, wins: 0, bombs: 0, bombScore: 0, level: 0, maxLevel: 0, bombTypes: {} }
-      newStats.players[name].games++
-      if ((winner === 'our' && gameData.ourTeam.players.includes(name)) ||
-          (winner === 'their' && gameData.theirTeam.players.includes(name))) {
-        newStats.players[name].wins++
-      }
-      // 累计级数
-      const isOurTeam = gameData.ourTeam.players.includes(name)
-      const levelChange = isOurTeam ? ourLevelDiff : theirLevelDiff
-      newStats.players[name].level = (newStats.players[name].level || 0) + levelChange
-      // 历史最高级数
-      const currentLevel = newStats.players[name].level
-      newStats.players[name].maxLevel = Math.max(newStats.players[name].maxLevel || 0, currentLevel)
-    })
-
-    // 统计炸弹（从累积的hands和当前bombs中）
-    const countBombs = (bombs) => {
-      bombs.forEach(bomb => {
-        const bombScore = bomb.score || bomb
-        const bombPlayer = bomb.player
-        if (bombPlayer && newStats.players[bombPlayer]) {
-          newStats.players[bombPlayer].bombs = (newStats.players[bombPlayer].bombs || 0) + 1
-          newStats.players[bombPlayer].bombScore = (newStats.players[bombPlayer].bombScore || 0) + bombScore
-          // 记录炸弹类型
-          if (!newStats.players[bombPlayer].bombTypes) newStats.players[bombPlayer].bombTypes = {}
-          newStats.players[bombPlayer].bombTypes[bombScore] = (newStats.players[bombPlayer].bombTypes[bombScore] || 0) + 1
-        }
-      })
-    }
-    // 统计累积hands中的炸弹
-    gameData.accumulated.our.hands.forEach(hand => countBombs(hand.bombs || []))
-    gameData.accumulated.their.hands.forEach(hand => countBombs(hand.bombs || []))
-    // 统计当前bombs（结算时可能还有未记录的炸弹）
-    countBombs(gameData.ourTeam.bombs)
-    countBombs(gameData.theirTeam.bombs)
-
-    setStats(newStats)
-    storage.set('scoring_stats', newStats)
-
     setSettleResult({
       winner,
-      levelDiff: Math.abs(scores.ourLevel - scores.theirLevel),
-      ourTotal: scores.ourTotal,
-      theirTotal: scores.theirTotal,
-      ourLevel: scores.ourLevel,
-      theirLevel: scores.theirLevel,
-      totalHands
+      levelDiff: Math.abs(finalOurLevel - finalTheirLevel),
+      ourTotal: finalOurTotal,
+      theirTotal: finalTheirTotal,
+      ourLevel: finalOurLevel,
+      theirLevel: finalTheirLevel,
+      totalHands,
+      ourHands,
+      theirHands
     })
     setShowSettle(true)
     setShowResult(true)
-
+    setOurBaseInput('')
+    setTheirBaseInput('')
     setGameData(prev => ({ ...prev, isSettled: true }))
   }
 
@@ -319,6 +280,7 @@ export default function App() {
     setTheirBaseInput('')
     setShowSettle(false)
     setShowResult(false)
+    if (!keepTeams) setShowSetup(true)
   }
 
   // 重置当前把
@@ -485,8 +447,11 @@ export default function App() {
             </section>
 
             <div className="action-row">
-              <button className="btn btn-success" onClick={recordHand}>记录本把</button>
-              <button className="btn btn-primary" onClick={settleGame}>结算本局</button>
+              {scores.ourTotal >= 1000 || scores.theirTotal >= 1000 ? (
+                <button className="btn btn-danger" onClick={settleGame}>结算本局</button>
+              ) : (
+                <button className="btn btn-success" onClick={recordHand}>记录本把</button>
+              )}
               <button className="btn btn-secondary" onClick={resetHand}>重置本把</button>
             </div>
 
@@ -522,23 +487,13 @@ export default function App() {
             }}
             onClearAll={() => {
               setHistory([])
-              setStats({ totalGames: 0, rounds: 0, players: {} })
               storage.remove('scoring_history')
-              storage.remove('scoring_stats')
             }}
           />
         )}
 
         {currentPage === 'stats' && (
-          <StatsPage
-            stats={stats}
-            onClearAll={() => {
-              setHistory([])
-              setStats({ totalGames: 0, rounds: 0, players: {} })
-              storage.remove('scoring_history')
-              storage.remove('scoring_stats')
-            }}
-          />
+          <StatsPage stats={stats} />
         )}
       </main>
 
@@ -567,6 +522,7 @@ export default function App() {
         <SettlePopup
           result={settleResult}
           players={{ our: gameData.ourTeam.players, their: gameData.theirTeam.players }}
+          hands={{ our: settleResult.ourHands, their: settleResult.theirHands }}
           onNewGame={newGame}
           onClose={() => setShowSettle(false)}
         />

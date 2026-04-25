@@ -69,3 +69,50 @@ export const determineWinner = (ourLevel, theirLevel, ourTotal, theirTotal) => {
   if (theirTotal > ourTotal) return 'their';
   return 'draw';
 };
+
+export const computeStatsFromHistory = (history) => {
+  const players = {}
+  let totalGames = 0
+  let rounds = 0
+
+  const ensurePlayer = (name) => {
+    if (!players[name]) players[name] = { games: 0, wins: 0, bombs: 0, bombScore: 0, level: 0, maxLevel: 0, bombTypes: {} }
+  }
+
+  history.forEach(record => {
+    totalGames++
+    rounds = Math.max(rounds, record.round || 0)
+
+    const ourPlayers = record.ourTeam.players
+    const theirPlayers = record.theirTeam.players
+    const winner = record.winner
+    const levelDiff = Math.abs(record.levelDiff)
+    const ourLevelChange = winner === 'our' ? levelDiff : winner === 'their' ? -levelDiff : 0
+
+    ;[...ourPlayers, ...theirPlayers].forEach(name => {
+      ensurePlayer(name)
+      players[name].games++
+      const isOur = ourPlayers.includes(name)
+      if ((winner === 'our' && isOur) || (winner === 'their' && !isOur)) players[name].wins++
+      const change = isOur ? ourLevelChange : -ourLevelChange
+      players[name].level += change
+      players[name].maxLevel = Math.max(players[name].maxLevel, players[name].level)
+    })
+
+    const countBombs = (hands) => hands.forEach(hand =>
+      (hand.bombs || []).forEach(bomb => {
+        const score = bomb.score || bomb
+        const player = bomb.player
+        if (player && players[player]) {
+          players[player].bombs++
+          players[player].bombScore += score
+          players[player].bombTypes[score] = (players[player].bombTypes[score] || 0) + 1
+        }
+      })
+    )
+    countBombs(record.ourTeam.hands || [])
+    countBombs(record.theirTeam.hands || [])
+  })
+
+  return { totalGames, rounds, players }
+};
