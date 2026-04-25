@@ -192,10 +192,10 @@ export default function App() {
       return
     }
 
-    // 计算含当前把的最终分数
+    // scores.ourTotal 已包含当前把（accumulated + handScore）
     const hasCurrentHand = scores.ourHandScore > 0 || scores.theirHandScore > 0
-    const finalOurTotal = scores.ourTotal + (hasCurrentHand ? scores.ourHandScore : 0)
-    const finalTheirTotal = scores.theirTotal + (hasCurrentHand ? scores.theirHandScore : 0)
+    const finalOurTotal = scores.ourTotal
+    const finalTheirTotal = scores.theirTotal
     const finalOurLevel = calculateLevel(finalOurTotal)
     const finalTheirLevel = calculateLevel(finalTheirTotal)
     const winner = determineWinner(finalOurLevel, finalTheirLevel, finalOurTotal, finalTheirTotal)
